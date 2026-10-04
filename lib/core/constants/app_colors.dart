@@ -9,4 +9,5 @@ abstract final class AppColors {
   static const Color onButton = Colors.black;
 
   static const Color icon = Colors.grey;
+  static const Color error = Colors.red;
 }
