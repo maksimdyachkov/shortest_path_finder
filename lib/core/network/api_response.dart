@@ -20,22 +20,29 @@ class ApiResponse {
   /// Reads a successful answer of the API.
   /// Throws [ServerException] when the answer is unreadable or reports an error.
   factory ApiResponse.fromHttp(http.Response httpResponse) {
+    final isSuccessful =
+        httpResponse.statusCode >= HttpStatus.ok &&
+        httpResponse.statusCode < HttpStatus.multipleChoices;
+
+    // A successful answer may have no body at all, e.g. 204 No Content.
+    if (isSuccessful && httpResponse.body.isEmpty) {
+      return const ApiResponse(error: false);
+    }
+
     final ApiResponse response;
     try {
       final json = jsonDecode(httpResponse.body);
-      if (json is! Map<String, dynamic>) {
-        throw const FormatException('The response is not a JSON object');
-      }
+      if (json is! Map<String, dynamic>) throw const ServerException();
       response = ApiResponse.fromJson(json);
-    } on Exception {
+    } on FormatException {
+      throw const ServerException();
+    } on CheckedFromJsonException {
       throw const ServerException();
     }
 
-    final isOk =
-        httpResponse.statusCode >= HttpStatus.ok &&
-        httpResponse.statusCode < HttpStatus.multipleChoices;
-    if (!isOk || response.error) throw ServerException(response.errorMessage);
-
+    if (!isSuccessful || response.error) {
+      throw ServerException(response.errorMessage);
+    }
     return response;
   }
 

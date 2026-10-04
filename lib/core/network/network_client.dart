@@ -21,11 +21,18 @@ class NetworkClient extends http.BaseClient {
       return http.StreamedResponse(
         http.ByteStream.fromBytes(body),
         response.statusCode,
-        headers: response.headers,
+        contentLength: body.length,
         request: response.request,
+        headers: response.headers,
+        isRedirect: response.isRedirect,
+        persistentConnection: response.persistentConnection,
+        reasonPhrase: response.reasonPhrase,
       );
     } on Exception {
       throw const NetworkException();
     }
   }
+
+  @override
+  void close() => _inner.close();
 }

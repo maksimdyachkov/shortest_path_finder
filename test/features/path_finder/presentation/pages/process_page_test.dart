@@ -10,6 +10,7 @@ import 'package:shortest_path_finder/features/path_finder/domain/entities/grid.d
 import 'package:shortest_path_finder/features/path_finder/domain/entities/path_result.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/entities/path_task.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/repositories/path_repository.dart';
+import 'package:shortest_path_finder/features/path_finder/domain/services/bfs_path_finder.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/usecases/task_solver.dart';
 import 'package:shortest_path_finder/features/path_finder/presentation/cubit/process_cubit.dart';
 import 'package:shortest_path_finder/features/path_finder/presentation/pages/process_page.dart';
@@ -38,7 +39,9 @@ void main() {
       'only when it reaches 100', (tester) async {
     // Created inside the test so that its futures run in the test's fake time.
     final repository = _FakePathRepository();
-    sl.registerFactory(() => ProcessCubit(repository, const TaskSolver()));
+    sl.registerFactory(
+      () => ProcessCubit(repository, const TaskSolver(BfsPathFinder())),
+    );
 
     await tester.pumpWidget(const MaterialApp(home: ProcessPage()));
 

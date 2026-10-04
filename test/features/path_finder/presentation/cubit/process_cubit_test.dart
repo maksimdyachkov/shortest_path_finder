@@ -6,6 +6,7 @@ import 'package:shortest_path_finder/features/path_finder/domain/entities/grid.d
 import 'package:shortest_path_finder/features/path_finder/domain/entities/path_result.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/entities/path_task.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/repositories/path_repository.dart';
+import 'package:shortest_path_finder/features/path_finder/domain/services/bfs_path_finder.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/usecases/task_solver.dart';
 import 'package:shortest_path_finder/features/path_finder/presentation/cubit/process_cubit.dart';
 import 'package:shortest_path_finder/features/path_finder/presentation/cubit/process_state.dart';
@@ -43,8 +44,11 @@ void main() {
     end: Cell(3, 0),
   );
   const results = [
-    PathResult(task: first, steps: []),
-    PathResult(task: second, steps: []),
+    PathResult(task: first, steps: [Cell(2, 1), Cell(1, 2), Cell(0, 2)]),
+    PathResult(
+      task: second,
+      steps: [Cell(0, 3), Cell(1, 2), Cell(2, 1), Cell(3, 0)],
+    ),
   ];
 
   late _FakePathRepository repository;
@@ -54,7 +58,7 @@ void main() {
     repository = _FakePathRepository()..tasks = const [first, second];
     cubit = ProcessCubit(
       repository,
-      const TaskSolver(),
+      const TaskSolver(BfsPathFinder()),
       percentStep: Duration.zero,
     );
   });

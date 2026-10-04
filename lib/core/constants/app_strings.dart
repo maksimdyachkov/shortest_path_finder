@@ -15,6 +15,8 @@ abstract final class AppStrings {
 
   static const resultListTitle = 'Result list screen';
 
+  static const previewTitle = 'Preview screen';
+
   static const errorNoConnection =
       'Unable to reach the server. Check your internet connection';
   static const errorUnexpected =

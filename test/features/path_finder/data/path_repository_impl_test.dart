@@ -112,6 +112,16 @@ void main() {
     );
   });
 
+  test('accepts any 2xx status code as a success', () async {
+    final created = repository(
+      (_) async => json({'error': false, 'message': 'Created'}, 201),
+    );
+    final noContent = repository((_) async => http.Response('', 204));
+
+    await expectLater(created.sendResults(const []), completes);
+    await expectLater(noContent.sendResults(const []), completes);
+  });
+
   test('treats a failed status code as an error even without the flag', () {
     final source = repository(
       (_) async => json({'error': false, 'message': 'Server is down'}, 500),
@@ -189,6 +199,35 @@ void main() {
     expect(source.fetchTasks, throwsA(isA<MissingUrlException>()));
   });
 
+  test(
+    'the network client keeps the response intact and closes its client',
+    () async {
+      var closed = false;
+      final inner = _ClosableClient(
+        MockClient(
+          (_) async => http.Response(
+            'body',
+            404,
+            reasonPhrase: 'Not Found',
+            headers: {'x-test': '1'},
+          ),
+        ),
+        onClose: () => closed = true,
+      );
+      final client = NetworkClient(inner);
+
+      final response = await client.get(url);
+      client.close();
+
+      expect(response.body, 'body');
+      expect(response.statusCode, 404);
+      expect(response.reasonPhrase, 'Not Found');
+      expect(response.headers['x-test'], '1');
+      expect(response.contentLength, 4);
+      expect(closed, true);
+    },
+  );
+
   test('throws NetworkException when the server is unreachable', () {
     final source = repository(
       (_) async => throw http.ClientException('Failed host lookup'),
@@ -196,4 +235,18 @@ void main() {
 
     expect(source.fetchTasks(), throwsA(isA<NetworkException>()));
   });
+}
+
+class _ClosableClient extends http.BaseClient {
+  _ClosableClient(this._inner, {required this.onClose});
+
+  final http.Client _inner;
+  final void Function() onClose;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      _inner.send(request);
+
+  @override
+  void close() => onClose();
 }

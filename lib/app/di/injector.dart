@@ -11,6 +11,8 @@ import '../../features/path_finder/data/repositories/api_url_repository_impl.dar
 import '../../features/path_finder/data/repositories/path_repository_impl.dart';
 import '../../features/path_finder/domain/repositories/api_url_repository.dart';
 import '../../features/path_finder/domain/repositories/path_repository.dart';
+import '../../features/path_finder/domain/services/bfs_path_finder.dart';
+import '../../features/path_finder/domain/services/path_finder.dart';
 import '../../features/path_finder/domain/usecases/task_solver.dart';
 import '../../features/path_finder/presentation/cubit/home_cubit.dart';
 import '../../features/path_finder/presentation/cubit/process_cubit.dart';
@@ -53,7 +55,9 @@ class Injector {
   }
 
   void _registerDomain() {
-    _locator.registerLazySingleton(() => const TaskSolver());
+    _locator
+      ..registerLazySingleton<PathFinder>(() => const BfsPathFinder())
+      ..registerLazySingleton(() => TaskSolver(_locator()));
   }
 
   void _registerCubits() {

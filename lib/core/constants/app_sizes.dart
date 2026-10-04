@@ -10,4 +10,11 @@ abstract final class AppSizes {
 
   static const double progressSize = 100;
   static const double dividerHeight = 1;
+
+  static const double cellMinSize = 48;
+  static const double cellBorderWidth = 1;
+  static const double cellPadding = 4;
+
+  /// The grid gets three times more of the preview screen than the path text.
+  static const int previewGridFlex = 3;
 }
