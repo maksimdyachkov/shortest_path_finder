@@ -89,24 +89,28 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(message, textAlign: TextAlign.center),
-        const SizedBox(height: AppSizes.s16),
-        Text(
-          AppStrings.percent(percent),
-          style: Theme.of(context).textTheme.headlineSmall,
+    // Centered while it fits; scrolls on a short screen, e.g. in landscape.
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: AppSizes.s16),
+            Text(
+              AppStrings.percent(percent),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const Divider(),
+            const SizedBox(height: AppSizes.s8),
+            SizedBox.square(
+              dimension: AppSizes.progressSize,
+              child: CircularProgressIndicator(
+                value: isBusy ? null : percent / ProcessState.maxPercent,
+              ),
+            ),
+          ],
         ),
-        const Divider(),
-        const SizedBox(height: AppSizes.s8),
-        SizedBox.square(
-          dimension: AppSizes.progressSize,
-          child: CircularProgressIndicator(
-            value: isBusy ? null : percent / ProcessState.maxPercent,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

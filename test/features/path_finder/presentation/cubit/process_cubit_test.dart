@@ -16,6 +16,7 @@ class _FakePathRepository implements PathRepository {
   AppException? fetchError;
   AppException? sendError;
   List<PathResult>? sent;
+  int sendCount = 0;
 
   @override
   Future<List<PathTask>> fetchTasks() async {
@@ -25,6 +26,7 @@ class _FakePathRepository implements PathRepository {
 
   @override
   Future<void> sendResults(List<PathResult> results) async {
+    sendCount++;
     if (sendError case final error?) throw error;
     sent = results;
   }
@@ -129,6 +131,37 @@ void main() {
       cubit.state,
       const ProcessReady(results, errorMessage: AppStrings.errorUnexpected),
     );
+  });
+
+  test('sends the results once when the button is pressed twice', () async {
+    await cubit.start();
+
+    await Future.wait([cubit.sendResults(), cubit.sendResults()]);
+
+    expect(repository.sendCount, 1);
+  });
+
+  test('stays quiet when closed in the middle of the progress', () async {
+    final paced = ProcessCubit(
+      repository,
+      const TaskSolver(BfsPathFinder()),
+      percentStep: const Duration(milliseconds: 1),
+    );
+    final start = paced.start();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await paced.close();
+
+    await expectLater(start, completes);
+    expect(paced.state, isA<ProcessCalculating>());
+  });
+
+  test('stays quiet when closed while the results are being sent', () async {
+    await cubit.start();
+    final sending = cubit.sendResults();
+    await cubit.close();
+
+    await expectLater(sending, completes);
+    expect(cubit.state, const ProcessSending(results));
   });
 
   test('does nothing when closed before the tasks arrive', () async {

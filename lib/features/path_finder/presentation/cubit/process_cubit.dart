@@ -30,24 +30,25 @@ class ProcessCubit extends Cubit<ProcessState> {
         await _showProgress(solved: results.length, total: tasks.length);
       }
 
-      emit(ProcessReady(results));
+      _emitIfOpen(ProcessReady(results));
     } on AppException catch (exception) {
-      emit(ProcessLoadFailure(exception.userMessage));
+      _emitIfOpen(ProcessLoadFailure(exception.userMessage));
     }
   }
 
-  /// Sends the calculated results; does nothing until they are ready.
+  /// Sends the calculated results. Does nothing until they are ready
+  /// or while a previous sending is still in progress.
   Future<void> sendResults() async {
     final current = state;
-    if (current is! ProcessCalculated) return;
+    if (current is! ProcessCalculated || current is ProcessSending) return;
 
     final results = current.results;
     emit(ProcessSending(results));
     try {
       await _repository.sendResults(results);
-      emit(ProcessSent(results));
+      _emitIfOpen(ProcessSent(results));
     } on AppException catch (exception) {
-      emit(ProcessReady(results, errorMessage: exception.userMessage));
+      _emitIfOpen(ProcessReady(results, errorMessage: exception.userMessage));
     }
   }
 
@@ -57,15 +58,15 @@ class ProcessCubit extends Cubit<ProcessState> {
     final solvedPercent = solved * ProcessState.maxPercent ~/ total;
 
     for (var percent = state.percent + 1; percent <= solvedPercent; percent++) {
-      emit(ProcessCalculating(percent));
+      _emitIfOpen(ProcessCalculating(percent));
       await Future<void>.delayed(percentStep);
     }
   }
 
-  /// The user can leave the page while a request or the calculation is still
-  /// running, so states emitted after closing are ignored instead of throwing.
-  @override
-  void emit(ProcessState state) {
-    if (!isClosed) super.emit(state);
+  /// Emits [state] unless the cubit is already closed. Used after every
+  /// `await`: the user can leave the page while a request or the calculation
+  /// is still running, and emitting on a closed cubit throws.
+  void _emitIfOpen(ProcessState state) {
+    if (!isClosed) emit(state);
   }
 }

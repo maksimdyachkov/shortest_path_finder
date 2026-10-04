@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shortest_path_finder/app/di/injector.dart';
 import 'package:shortest_path_finder/core/constants/app_durations.dart';
 import 'package:shortest_path_finder/core/constants/app_strings.dart';
+import 'package:shortest_path_finder/core/error/exceptions.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/entities/cell.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/entities/grid.dart';
 import 'package:shortest_path_finder/features/path_finder/domain/entities/path_result.dart';
@@ -21,8 +22,12 @@ class _FakePathRepository implements PathRepository {
   @override
   Future<List<PathTask>> fetchTasks() => tasks.future;
 
+  AppException? sendError;
+
   @override
-  Future<void> sendResults(List<PathResult> results) async {}
+  Future<void> sendResults(List<PathResult> results) async {
+    if (sendError case final error?) throw error;
+  }
 }
 
 void main() {
@@ -59,6 +64,35 @@ void main() {
 
     expect(find.text(AppStrings.processFinished), findsOneWidget);
     expect(find.text(AppStrings.percent(100)), findsOneWidget);
+    expect(find.text(AppStrings.processSendButton), findsOneWidget);
+  });
+
+  testWidgets('fits a short landscape screen even with a send error', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final repository = _FakePathRepository()
+      ..sendError = const ServerException(
+        'A long error message from the server that needs two lines',
+      );
+    sl.registerFactory(
+      () => ProcessCubit(
+        repository,
+        const TaskSolver(BfsPathFinder()),
+        percentStep: Duration.zero,
+      ),
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: ProcessPage()));
+    repository.tasks.complete(const [task]);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.processSendButton));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
     expect(find.text(AppStrings.processSendButton), findsOneWidget);
   });
 }

@@ -12,8 +12,13 @@ class _FakeApiUrlRepository implements ApiUrlRepository {
   @override
   String? getUrl() => url;
 
+  int saveCount = 0;
+
   @override
-  Future<void> saveUrl(String url) async => this.url = url;
+  Future<void> saveUrl(String url) async {
+    saveCount++;
+    this.url = url;
+  }
 }
 
 void main() {
@@ -59,6 +64,15 @@ void main() {
 
     await states;
     expect(repository.url, validUrl);
+  });
+
+  test('saves the url once when Start is pressed twice', () async {
+    final repository = _FakeApiUrlRepository(validUrl);
+    final cubit = build(repository);
+
+    await Future.wait([cubit.submit(), cubit.submit()]);
+
+    expect(repository.saveCount, 1);
   });
 
   test('can be submitted again after a successful save', () async {

@@ -16,7 +16,10 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   /// Saves the entered url if it is valid.
+  /// Does nothing while a previous saving is still in progress.
   Future<void> submit() async {
+    if (state is HomeSaving) return;
+
     final url = state.url.trim();
 
     if (!_validator.isValid(url)) {
